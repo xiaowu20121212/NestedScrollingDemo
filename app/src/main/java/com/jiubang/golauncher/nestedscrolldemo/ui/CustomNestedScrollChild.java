@@ -7,7 +7,6 @@ import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
-import android.view.View;
 import android.view.ViewConfiguration;
 import android.widget.LinearLayout;
 import android.widget.OverScroller;
@@ -22,10 +21,10 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
     private final int[] offset = new int[2]; //偏移量
     private final int[] consumed = new int[2]; //消费
     private int lastY;
-    private int showHeight;
+    private int mMaxScrollY;
     private VelocityTracker mVelocityTracker;
     private OverScroller mScroller;
-    private float  mMaximumVelocity;
+    private float mMaximumVelocity, mMinimumVelocity;
     private float mTouchSlop;
 
     public CustomNestedScrollChild(Context context) {
@@ -39,18 +38,22 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mMaximumVelocity = ViewConfiguration.get(context)
                 .getScaledMaximumFlingVelocity();
+        mMinimumVelocity = ViewConfiguration.get(context).getScaledMinimumFlingVelocity();
     }
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         //第一次测量，因为布局文件中高度是wrap_content，因此测量模式为atmost，即高度不超过父控件的剩余空间
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        showHeight = getMeasuredHeight();
+        int showHeight = getMeasuredHeight();
 
         //第二次测量，对稿哦度没有任何限制，那么测量出来的就是完全展示内容所需要的高度
         heightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        mMaxScrollY = getMeasuredHeight() - showHeight;
     }
+
     private void initOrResetVelocityTracker() {
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
@@ -65,6 +68,7 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
             mVelocityTracker = null;
         }
     }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
@@ -76,27 +80,32 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
                 break;
             //移动
             case MotionEvent.ACTION_MOVE:
+                mVelocityTracker.addMovement(event);
                 int y = (int) (event.getRawY());
                 int dy = y - lastY;
                 lastY = y;
                 if (startNestedScroll(ViewCompat.SCROLL_AXIS_HORIZONTAL)
-                        && dispatchNestedPreScroll(0, dy, consumed, offset)) //如果找到了支持嵌套滑动的父类,父类进行了一系列的滑动
-                {
-                    mVelocityTracker.addMovement(event);
+                        && dispatchNestedPreScroll(0, dy, consumed, offset)){ //如果找到了支持嵌套滑动的父类,父类进行了一系列的滑动
                     //获取滑动距离
-                    int remain = dy - consumed[1];
-                    if (remain != 0) {
+                    dy = dy - consumed[1];
+                   /* if (remain != 0) {
                         scrollBy(0, -remain);
-                    }
-                } else {
+                    }*/
+                }/* else {
                     scrollBy(0, -dy);
-                }
+                }*/
+                final int oldY = getScrollY();
+                scrollBy(0, -dy);
+                final int scrolledDeltaY = getScrollY() - oldY;
+                final int unconsumedY = dy - scrolledDeltaY;
+                dispatchNestedScroll(0,scrolledDeltaY,0, unconsumedY,offset);
                 break;
             case MotionEvent.ACTION_UP:
-                final VelocityTracker velocityTracker = mVelocityTracker;
-                velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
-                int initialVelocity = (int) velocityTracker.getYVelocity();
-                flingWithNestedDispatch(-initialVelocity);
+                mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
+                int velocityY = (int) mVelocityTracker.getYVelocity();
+                if (Math.abs(velocityY) > mMinimumVelocity) {
+                    flingWithNestedDispatch(-velocityY);
+                }
                 recycleVelocityTracker();
                 break;
         }
@@ -107,9 +116,8 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
     //限制滚动范围
     @Override
     public void scrollTo(int x, int y) {
-        int maxY = getMeasuredHeight() - showHeight;
-        if (y > maxY) {
-            y = maxY;
+        if (y > mMaxScrollY) {
+            y = mMaxScrollY;
         }
         if (y < 0) {
             y = 0;
@@ -183,22 +191,21 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
             }
         }
     }
+
     public void fling(int velocityY) {
-        if (getChildCount() > 0) {
-            int height = getHeight() - getPaddingBottom() - getPaddingTop();
-            int bottom = getChildAt(0).getHeight();
-            mScroller.fling(getScrollX(), getScrollY(), 0, velocityY, 0, 0, 0,
-                    Math.max(0, bottom - height), 0, height / 2);
-            ViewCompat.postInvalidateOnAnimation(this);
+        mScroller.fling(0, getScrollY(), 0, velocityY, 0, 0, 0, mMaxScrollY);
+        invalidate();
+    }
+
+    @Override
+    public void computeScroll() {
+        if (mScroller.computeScrollOffset()) {
+            scrollTo(0, mScroller.getCurrY());
+            invalidate();
         }
     }
-    int getScrollRange() {
-        int scrollRange = 0;
-        if (getChildCount() > 0) {
-            View child = getChildAt(0);
-            scrollRange = Math.max(0,
-                    child.getHeight() - (getHeight() - getPaddingBottom() - getPaddingTop()));
-        }
-        return scrollRange;
+
+    private int getScrollRange() {
+        return mMaxScrollY;
     }
 }
