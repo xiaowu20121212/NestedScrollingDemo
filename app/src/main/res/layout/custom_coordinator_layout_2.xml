@@ -1,0 +1,48 @@
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:ignore="RtlHardcoded">
+    <LinearLayout
+        android:id="@+id/observer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_behavior="com.jiubang.golauncher.nestedscrolldemo.behavior.TopLayoutBehavior">
+        <ImageView
+            android:id="@+id/img_top_view"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:src="@mipmap/guide_enter_theme_store_banner" />
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#ffffff">
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="this is Title"
+                android:textColor="#f0f"
+                android:textSize="21sp"
+                android:typeface="serif" />
+        </RelativeLayout>
+    </LinearLayout>
+    <android.support.v4.widget.NestedScrollView
+        android:id="@+id/observable"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="com.jiubang.golauncher.nestedscrolldemo.behavior.NestedScrollViewBehavior"
+        android:scrollbars="none">
+        <LinearLayout
+            android:id="@+id/content_views"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </android.support.v4.widget.NestedScrollView>
+
+</android.support.design.widget.CoordinatorLayout>

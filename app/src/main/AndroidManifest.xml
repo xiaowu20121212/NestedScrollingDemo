@@ -16,6 +16,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CustomActivity"/>
+        <activity android:name=".EventActivity"/>
+        <activity android:name=".EasyCoordinatorActivity"/>
+        <activity android:name=".NestedScrollViewActivity"/>
+        <activity android:name=".ComplexCoordinatorActivity"/>
     </application>
 
 </manifest>

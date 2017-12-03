@@ -1,5 +1,7 @@
 package com.jiubang.golauncher.nestedscrolldemo.presenter;
 
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
@@ -32,6 +34,8 @@ public class ContentPresenter extends AbsPresenter<IContentView, ContentModel> {
         ArrayList<View> views = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
             TextView textView = new TextView(mViewRef.get().getContext());
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP,20);
+            textView.setGravity(Gravity.CENTER_VERTICAL);
             textView.setText(data.get(i));
             views.add(textView);
         }

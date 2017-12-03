@@ -103,7 +103,6 @@ public class NestedScrollingEventContainer extends LinearLayout implements ICont
                 mDy = y - mLastY;
                 mLastY = y;
                 if (Math.abs(mDy) > mTouchSlop) {
-                    mDragging = true;
                     if (!isTopHidden
                             || (mScrollView.getScrollY() == 0 && isTopHidden && mDy > 0)) {
                         onTouchEvent(ev);
@@ -205,7 +204,8 @@ public class NestedScrollingEventContainer extends LinearLayout implements ICont
         }
 
         isTopHidden = getScrollY() == mTopViewHeight;
-
+        float faction = getScrollY() * 1.0f / mTopViewHeight;
+        mTitle.setTranslationX(-300 * faction);
     }
 
     @Override

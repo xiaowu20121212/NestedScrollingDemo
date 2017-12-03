@@ -5,6 +5,7 @@ import android.support.v4.view.NestedScrollingChild;
 import android.support.v4.view.NestedScrollingChildHelper;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
@@ -19,6 +20,7 @@ import android.widget.OverScroller;
 public class CustomNestedScrollChild extends LinearLayout implements NestedScrollingChild {
     private NestedScrollingChildHelper mNestedScrollingChildHelper;
     private final int[] offset = new int[2]; //偏移量
+    private int mNestedYOffset;
     private final int[] consumed = new int[2]; //消费
     private int lastY;
     private int mMaxScrollY;
@@ -44,13 +46,14 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        //第一次测量，因为布局文件中高度是wrap_content，因此测量模式为atmost，即高度不超过父控件的剩余空间
+        //第一次测量，由于父类限制了该子类高度为父容器高度减去mTitle的高度，拿到可视区域
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int showHeight = getMeasuredHeight();
 
-        //第二次测量，对稿哦度没有任何限制，那么测量出来的就是完全展示内容所需要的高度
+        //第二次测量，没有任何限制，那么测量出来的就是完全展示内容所需要的高度
         heightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        //计算可以滚动的最大范围
         mMaxScrollY = getMeasuredHeight() - showHeight;
     }
 
@@ -71,34 +74,53 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //获取一个用于计算
+        MotionEvent vtev = MotionEvent.obtain(event);
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            mNestedYOffset = 0;
+        }
+        vtev.offsetLocation(0, mNestedYOffset);
         switch (event.getAction()) {
             //按下
             case MotionEvent.ACTION_DOWN:
                 initOrResetVelocityTracker();
-                mVelocityTracker.addMovement(event);
-                lastY = (int) event.getRawY();
+                lastY = (int) event.getY();
                 break;
             //移动
             case MotionEvent.ACTION_MOVE:
-                mVelocityTracker.addMovement(event);
-                int y = (int) (event.getRawY());
+                //如果是getY()方法来计算偏移值，那么一定结合子类的offset来计算准确
+                //如果是getRawY()方法来结算偏移值，那么不需要结合offset，并且不需要重新赋值mLastY,每次获取相减即可
+                final int y = (int) (event.getY());
                 int dy = y - lastY;
-                lastY = y;
+                if (Math.abs(dy) < mTouchSlop) {
+                    return true;
+                }
+                mVelocityTracker.addMovement(event);
+                Log.d("xiaowu_nested" , "\n\n产生dy: " + dy);
                 if (startNestedScroll(ViewCompat.SCROLL_AXIS_HORIZONTAL)
-                        && dispatchNestedPreScroll(0, dy, consumed, offset)){ //如果找到了支持嵌套滑动的父类,父类进行了一系列的滑动
+                        && dispatchNestedPreScroll(0, dy, consumed, offset)) {
+                    //如果找到了支持嵌套滑动的父类,并且父类产生了消费consumed[0] != 0 || consumed[1] != 0
+                    //dispatchNestedPreScroll方法返回 return consumed[0] != 0 || consumed[1] != 0;
+                    Log.d("xiaowu_nested" , "父view消费: " + consumed[1]);
                     //获取滑动距离
-                    dy = dy - consumed[1];
-                   /* if (remain != 0) {
-                        scrollBy(0, -remain);
-                    }*/
-                }/* else {
-                    scrollBy(0, -dy);
-                }*/
+                    dy -= consumed[1];
+                    vtev.offsetLocation(0, offset[1]);
+                    mNestedYOffset += offset[1];
+                }
+                //如果子类发生了view偏移，实际上y的值则offset[1]不等于0
+                lastY = y - offset[1];
                 final int oldY = getScrollY();
+                //子类消费剩余的dy，内容滚动是相反的，所以取反
                 scrollBy(0, -dy);
-                final int scrolledDeltaY = getScrollY() - oldY;
-                final int unconsumedY = dy - scrolledDeltaY;
-                dispatchNestedScroll(0,scrolledDeltaY,0, unconsumedY,offset);
+                final int dyConsumed = oldY - getScrollY();
+                final int unconsumedY =  dy - dyConsumed ;
+                Log.d("xiaowu_nested" , "子view消费: " + dyConsumed + " 剩：" + unconsumedY);
+                //子类发生了滚动后再次通知父类
+                if (dispatchNestedScroll(0, dyConsumed, 0, unconsumedY, offset)) {
+                    //dispatchNestedScroll 的返回值dxConsumed != 0 || dyConsumed != 0 || dxUnconsumed != 0 || dyUnconsumed != 0
+                    lastY -= offset[1];
+                    vtev.offsetLocation(0, offset[1]);
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
@@ -106,10 +128,15 @@ public class CustomNestedScrollChild extends LinearLayout implements NestedScrol
                 if (Math.abs(velocityY) > mMinimumVelocity) {
                     flingWithNestedDispatch(-velocityY);
                 }
+                stopNestedScroll();
                 recycleVelocityTracker();
                 break;
         }
-
+        //UP事件将不再收到
+        if (mVelocityTracker != null) {
+            mVelocityTracker.addMovement(vtev);
+        }
+        vtev.recycle();
         return true;
     }
 

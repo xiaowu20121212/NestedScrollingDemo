@@ -1,28 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.jiubang.golauncher.nestedscrolldemo.ui.CustomNestedScrollParent
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.jiubang.golauncher.nestedscrolldemo.ui.CustomNestedScrollParent xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
     <ImageView
+        android:id="@+id/img_top_view"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:src="@mipmap/guide_enter_theme_store_banner"
-        android:scaleType="centerCrop"/>
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:textSize="21sp"
-        android:typeface="serif"
-        android:background="#ffffff"
-        android:textColor="#f0f"
-        android:gravity="center"
-        android:text="this is Title"/>
+        android:scaleType="centerCrop"
+        android:src="@mipmap/guide_enter_theme_store_banner" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#ffffff">
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="this is Title"
+            android:textColor="#f0f"
+            android:textSize="21sp"
+            android:typeface="serif" />
+    </RelativeLayout>
+
 
     <com.jiubang.golauncher.nestedscrolldemo.ui.CustomNestedScrollChild
+        android:id="@+id/nested_child"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"/>
+        android:orientation="vertical" />
 
 </com.jiubang.golauncher.nestedscrolldemo.ui.CustomNestedScrollParent>

@@ -1,8 +1,10 @@
 package com.jiubang.golauncher.nestedscrolldemo.ui;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.NestedScrollingParentHelper;
+import android.support.v4.widget.NestedScrollView;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -18,42 +20,43 @@ import com.jiubang.golauncher.nestedscrolldemo.viewinterfacae.IContentView;
 import java.util.ArrayList;
 
 /**
- * Created by yuanzhiwu on 2017/12/2
- * 嵌套滑动机制父View
+ * Created by YuanZhiWu on 2017/12/3.
  */
 
-public class CustomNestedScrollParent extends LinearLayout implements NestedScrollingParent, IContentView {
+public class NestedScrollingV4Parent extends LinearLayout implements NestedScrollingParent, IContentView {
     private ContentPresenter mPresenter;
     private ImageView mTopView;
     private TextView mTitle;
-    private CustomNestedScrollChild myNestedScrollChild;
+    private NestedScrollView myNestedScrollChild;
     private NestedScrollingParentHelper mNestedScrollingParentHelper;
     private int imgHeight;
     private int tvHeight;
     private OverScroller mScroller;
-
-    public CustomNestedScrollParent(Context context) {
-        super(context);
+    public NestedScrollingV4Parent(Context context) {
+        this(context, null);
     }
 
-    public CustomNestedScrollParent(Context context, AttributeSet attrs) {
-        super(context, attrs);
+    public NestedScrollingV4Parent(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public NestedScrollingV4Parent(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
         init();
     }
-
     private void init() {
         mPresenter = createPresenter();
         mScroller = new OverScroller(getContext());
         mNestedScrollingParentHelper = new NestedScrollingParentHelper(this);
     }
-
     //获取子view
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
         mTopView = (ImageView) findViewById(R.id.img_top_view);
         mTitle = (TextView) findViewById(R.id.tv_title);
-        myNestedScrollChild = (CustomNestedScrollChild) findViewById(R.id.nested_child);
+        myNestedScrollChild = (NestedScrollView) findViewById(R.id.nested_child);
+        myNestedScrollChild.setNestedScrollingEnabled(true);
         mTopView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -72,7 +75,6 @@ public class CustomNestedScrollParent extends LinearLayout implements NestedScro
         });
         addContentView(mPresenter.getListView());
     }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -80,11 +82,28 @@ public class CustomNestedScrollParent extends LinearLayout implements NestedScro
         int heightSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight() - mTitle.getMeasuredHeight(), MeasureSpec.EXACTLY);
         myNestedScrollChild.measure(widthSpec, heightSpec);
     }
+    @Override
+    public ContentPresenter createPresenter() {
+        return new ContentPresenter(this);
+    }
+
+    @Override
+    public void addContentView(ArrayList<View> views) {
+        LinearLayout linearLayout = new LinearLayout(getContext());
+        linearLayout.setOrientation(VERTICAL);
+        for (int i = 0; i < views.size(); i++) {
+            linearLayout.addView(views.get(i), i);
+        }
+        myNestedScrollChild.addView(linearLayout);
+
+    }
+
+
 
     //在此可以判断参数target是哪一个子view以及滚动的方向，然后决定是否要配合其进行嵌套滚动
     @Override
     public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
-        if (target instanceof CustomNestedScrollChild) {
+        if (target instanceof NestedScrollView) {
             return true;
         }
         return false;
@@ -105,12 +124,10 @@ public class CustomNestedScrollParent extends LinearLayout implements NestedScro
     //前3个为输入参数，最后一个是输出参数
     @Override
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
-//        if (Math.abs(dy) > ViewConfiguration.get(getContext()).getScaledTouchSlop()) {
-            if (showImg(dy) || hideImg(dy)) {//如果需要显示或隐藏图片，即需要自己(parent)滚动
-                scrollBy(0, -dy);//滚动
-                consumed[1] = dy;//告诉child我消费了多少
-            }
-//        }
+        if (showImg(-dy) || hideImg(-dy)) {//如果需要显示或隐藏图片，即需要自己(parent)滚动
+            scrollBy(0, dy);//滚动
+            consumed[1] = dy;//告诉child我消费了多少
+        }
     }
 
     //后于child滚动
@@ -180,18 +197,6 @@ public class CustomNestedScrollParent extends LinearLayout implements NestedScro
         if (mScroller.computeScrollOffset()) {
             scrollTo(0, mScroller.getCurrY());
             invalidate();
-        }
-    }
-
-    @Override
-    public ContentPresenter createPresenter() {
-        return new ContentPresenter(this);
-    }
-
-    @Override
-    public void addContentView(ArrayList<View> views) {
-        for (int i = 0; i < views.size(); i++) {
-            myNestedScrollChild.addView(views.get(i), i);
         }
     }
 }

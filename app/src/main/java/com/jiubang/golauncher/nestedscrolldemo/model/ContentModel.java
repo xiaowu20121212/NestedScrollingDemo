@@ -21,7 +21,7 @@ public class ContentModel extends AbsBaseModel<ContentPresenter> {
             String text = "Number is " + i;
             data.add(text);
             i++;
-        }while (i < 50);
+        }while (i < 150);
         return data;
     };
 }
