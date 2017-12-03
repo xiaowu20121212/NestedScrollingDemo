@@ -1,0 +1,55 @@
+﻿http://office.mmais.com.cn/List.shtml?cat=PPT
+一个例子
+   事件分发解决方案
+   更好解决方案---引出嵌套滚动
+
+嵌套滚动机制
+	来源：v4包
+	有哪些类
+	    NestedScrollingParent（接口，V21上ViewParent实现了该接口）
+	    NestedScrollingChild（接口，V21上ViewParent实现了该接口）
+	    NestedScrollingChildHelper （父类辅助类）
+	    NestedScrollingParentHelper（子类辅助类）
+
+	NesteScrollingParent
+		// 参数enabled:true表示view使用嵌套滚动,false表示禁用.
+			public void setNestedScrollingEnabled(boolean enabled);
+
+			public boolean isNestedScrollingEnabled();
+
+		// 参数axes:表示滚动的方向如:ViewCompat.SCROLL_AXIS_VERTICAL(垂直方向滚动)和ViewCompat.SCROLL_AXIS_HORIZONTAL(水平方向滚动)
+		// 返回值:true表示本次滚动支持嵌套滚动,false不支持
+
+			public boolean startNestedScroll(int axes);
+
+			public void stopNestedScroll();
+		
+			public boolean hasNestedScrollingParent();
+		
+		// 参数dxConsumed: 表示view消费了x方向的距离长度
+
+		// 参数dyConsumed: 表示view消费了y方向的距离长度
+
+		// 参数dxUnconsumed: 表示滚动产生的x滚动距离还剩下多少没有消费
+
+		// 参数dyUnconsumed: 表示滚动产生的y滚动距离还剩下多少没有消费
+
+		// 参数offsetInWindow: 表示剩下的距离dxUnconsumed和dyUnconsumed使得view在父布局中的位置偏移了多少
+
+			public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int[] offsetWindow);
+
+		// 参数dx: 表示view本次x方向的滚动的总距离长度
+
+		// 参数dy: 表示view本次y方向的滚动的总距离长度
+
+		// 参数consumed: 表示父布局消费的距离,consumed[0]表示x方向,consumed[1]表示y方向
+
+		// 参数offsetInWindow: 表示剩下的距离dxUnconsumed和dyUnconsumed使得view在父布局中的位置偏移了多少
+
+			public boolean dispatchNestedPreScroll(int dx, int dy, int[] consumed, int[] offsetInWindow);
+
+		// 这个是滑动的就不详细分析了
+
+		public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed);
+
+		public boolean dispatchNestedPreFling(float velocityX, float velocityY);
