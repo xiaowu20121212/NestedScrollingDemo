@@ -77,6 +77,7 @@ public class CustomNestedScrollParent extends LinearLayout implements NestedScro
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int widthSpec = MeasureSpec.makeMeasureSpec(myNestedScrollChild.getMeasuredWidth(), MeasureSpec.EXACTLY);
+        //首先给NestedScrollChild一个可视高度，然后在它onMeasure第二次测量不限高度，目的是让子view 的内容全部测量
         int heightSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight() - mTitle.getMeasuredHeight(), MeasureSpec.EXACTLY);
         myNestedScrollChild.measure(widthSpec, heightSpec);
     }

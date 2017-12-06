@@ -53,3 +53,31 @@
 		public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed);
 
 		public boolean dispatchNestedPreFling(float velocityX, float velocityY);
+
+总结
+
+NestedScrollingChild 与 NestedScrollingParent 方法的对应关系
+
+子View	                        父View	                                                方法描述
+startNestedScroll	        onStartNestedScroll、onNestedScrollAccepted	                Scrolling Child 开始滑动的时候，通知 Scrolling Parent 要开始滑动了，通常是在 Action_down 动作 的时候调用这个方法
+
+dispatchNestedPreScroll 	onNestedPreScroll	                                        在 Scrolling Child 要开始滑动的时候，询问 Scrolling Parent 是否先于 Scrolling Child 进行相应的处理，同时是在 Action_move 的时候调用
+
+dispatchNestedScroll	    onNestedScroll	                                            在 Scrolling Child 滑动后会询问 Scrolling Parent 是否需要继续滑动
+
+dispatchNestedPreFling	    onNestedPreFling	                                        在 Scrolling Child 开始处理 Fling 动作的时候，询问 Scrolling Parent 是否需要先处理 Fling 动作
+
+dispatchNestedFling	        onNestedFling	                                            在 Scrolling Child 处理 Fling 动作完毕的时候，询问 Scrolling Parent 是都还需要进行相应的处理
+
+stopNestedScroll	        onStopNestedScroll	                                        在 Scrolling Child 停止滑动的时候，会调用 Scrolling Parent 的这个方法。通常是在 Action_up 或者 Action_cancel 或者被别的 View 消费 Touch 事件的时候调用的
+
+
+
+执行流程
+
+在 Action_Down 的时候，Scrolling child 会调用 startNestedScroll 方法，通过 childHelper 回调 Scrolling Parent 的 startNestedScroll 方法
+在 Action_move 的时候，Scrolling Child 要开始滑动的时候，会调用dispatchNestedPreScroll 方法，通过 ChildHelper 询问 Scrolling Parent 是否要先于 Child 进行 滑动，若需要的话，会调用 Parent 的 onNestedPreScroll 方法，协同 Child 一起进行滑动
+当 ScrollingChild 滑动完成的时候，会调用 dispatchNestedScroll 方法，通过 ChildHelper 询问 Scrolling Parent 是否需要进行滑动，需要的话，会 调用 Parent 的 onNestedScroll 方法
+在 Action_down,Action_move 的时候，会调用 Scrolling Child 的stopNestedScroll ，通过 ChildHelper 询问 Scrolling parent 的 stopNestedScroll 方法。
+如果需要处理 Fling 动作，我们可以通过 VelocityTrackerCompat 获得相应的速度，并在 Action_up 的时候，调用 dispatchNestedPreFling 方法，通过 ChildHelper 询问 Parent 是否需要先于 child 进行 Fling 动作
+在 Child 处理完 Fling 动作时候，如果 Scrolling Parent 还需要处理 Fling 动作，我们可以调用 dispatchNestedFling 方法，通过 ChildHelper ，调用 Parent 的 onNestedFling 方法
