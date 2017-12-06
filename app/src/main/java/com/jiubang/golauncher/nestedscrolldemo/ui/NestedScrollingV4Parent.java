@@ -7,6 +7,7 @@ import android.support.v4.view.NestedScrollingParentHelper;
 import android.support.v4.widget.NestedScrollView;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -32,6 +33,8 @@ public class NestedScrollingV4Parent extends LinearLayout implements NestedScrol
     private int imgHeight;
     private int tvHeight;
     private OverScroller mScroller;
+    private int mMaximumVelocity, mMinimumVelocity;
+
     public NestedScrollingV4Parent(Context context) {
         this(context, null);
     }
@@ -48,6 +51,9 @@ public class NestedScrollingV4Parent extends LinearLayout implements NestedScrol
         mPresenter = createPresenter();
         mScroller = new OverScroller(getContext());
         mNestedScrollingParentHelper = new NestedScrollingParentHelper(this);
+        mMaximumVelocity = ViewConfiguration.get(getContext())
+                .getScaledMaximumFlingVelocity();
+        mMinimumVelocity = ViewConfiguration.get(getContext()).getScaledMinimumFlingVelocity();
     }
     //获取子view
     @Override
@@ -139,6 +145,10 @@ public class NestedScrollingV4Parent extends LinearLayout implements NestedScrol
     //返回值：是否消费了fling
     @Override
     public boolean onNestedPreFling(View target, float velocityX, float velocityY) {
+        if (0 < getScrollY() && getScrollY() < imgHeight) {
+            fling(velocityY);
+            return true;
+        }
         return false;
     }
 
@@ -198,5 +208,10 @@ public class NestedScrollingV4Parent extends LinearLayout implements NestedScrol
             scrollTo(0, mScroller.getCurrY());
             invalidate();
         }
+    }
+
+    public void fling(float velocityY) {
+        mScroller.fling(0, getScrollY(), 0, (int)velocityY, 0, 0, mMinimumVelocity, mMaximumVelocity);
+        invalidate();
     }
 }
